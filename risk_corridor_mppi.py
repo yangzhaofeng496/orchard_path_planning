@@ -22,31 +22,45 @@ class RiskCorridorMPPI:
             path=(s[0]-c.x)**2+(s[1]-c.y)**2;heading=abs(self.model.normalize_angle(s[2]-c.yaw));risk=c.risk
             dyn=0.
             for x,y,sgn in (scene.dyn if use_dynamic else []):
-                ox=(x+sgn*.5*(t0+h)*self.model.dt)*self.res;oy=y*self.res;dd=math.hypot(s[0]-ox,s[1]-oy);dyn+=10/(dd+.2)
+                ox=(x+sgn*.5*(t0+h)*self.model.dt)*self.res;oy=y*self.res;dd=math.hypot(s[0]-ox,s[1]-oy)
+                safe=1.6+.35*risk;dyn+=18*max(0.,safe-dd)**2
             if self.collision(scene,s):cost+=5000
             progress=i/max(len(corridor)-1,1)
-            cost+=(2+4*risk)*path+(1+2*risk)*heading+dyn+.15*d*d+.3*(d-last_delta)**2-.8*v-2.5*progress;last_delta=d
+            cost+=(2+3*risk)*path+(1+2*risk)*heading+dyn+.12*d*d+.25*(d-last_delta)**2-1.4*v-4.0*progress;last_delta=d
         goal=corridor[-1];cost+=4*math.hypot(s[0]-goal.x,s[1]-goal.y);return cost
     def recovery(self,scene,state,corridor):
         """Return only a corridor state reachable by a collision-free primitive."""
-        i=self.nearest(corridor,state)
-        for target in corridor[i+1:min(len(corridor),i+10)]:
-            desired=math.atan2(target.y-state[1],target.x-state[0]);err=self.model.normalize_angle(desired-state[2]);d=np.clip(err,-self.model.max_steer,self.model.max_steer)
-            tr=self.model.simulate(state,.5,d,8)
-            if all(not self.collision(scene,q) for q in tr):return tr[-1]
-        return None
+        i=self.nearest(corridor,state);best=None
+        for v,d in self.model.get_motion_primitives():
+            tr=self.model.simulate(state,v,d,10)
+            if not all(not self.collision(scene,q) for q in tr):continue
+            j=self.nearest(corridor,tr[-1]);score=j-i-.3*abs(d)-.8*(v<0)
+            if best is None or score>best[0]:best=(score,tr[-1])
+        return best[1] if best is not None and best[0]>0 else None
     def track(self,scene,corridor,max_steps=1400,enable_recovery=True,use_dynamic=True):
         if not corridor:return np.empty((0,3)),{'success':False,'collisions':0,'recoveries':0}
-        state=np.array([corridor[0].x,corridor[0].y,corridor[0].yaw]);traj=[state.copy()];u=np.tile([1.0,0.],(self.H,1));stall=0;recoveries=0;collisions=0;prev_goal=1e9
+        state=np.array([corridor[0].x,corridor[0].y,corridor[0].yaw]);traj=[state.copy()];u=np.tile([1.0,0.],(self.H,1));stall=0;recoveries=0;collisions=0;prev_idx=0
         for t in range(max_steps):
+            idx0=self.nearest(corridor,state);target=corridor[min(idx0+4,len(corridor)-1)]
+            desired=math.atan2(target.y-state[1],target.x-state[0]);err=self.model.normalize_angle(desired-state[2])
+            nominal_delta=np.clip(math.atan2(2*self.model.L*math.sin(err),max(math.hypot(target.x-state[0],target.y-state[1]),.5)),-self.model.max_steer,self.model.max_steer)
+            u[:,0]=.55*u[:,0]+.45*.95;u[:,1]=.45*u[:,1]+.55*nominal_delta
             noise=np.zeros((self.K,self.H,2));noise[:,:,0]=self.rng.normal(0,.25,(self.K,self.H));noise[:,:,1]=self.rng.normal(0,.12,(self.K,self.H))
-            candidates=u[None,:,:]+noise;candidates[:,:,0]=np.clip(candidates[:,:,0],-.4,self.model.max_speed);candidates[:,:,1]=np.clip(candidates[:,:,1],-self.model.max_steer,self.model.max_steer)
+            candidates=u[None,:,:]+noise;candidates[:,:,0]=np.clip(candidates[:,:,0],0.,self.model.max_speed);candidates[:,:,1]=np.clip(candidates[:,:,1],-self.model.max_steer,self.model.max_steer)
             costs=np.array([self.rollout_cost(scene,state,c,corridor,t,use_dynamic) for c in candidates]);w=np.exp(-(costs-costs.min())/max(costs.std(),1e-6));w/=w.sum();u=np.sum(w[:,None,None]*candidates,axis=0)
-            state=self.model.update(state,*u[0]);u[:-1]=u[1:];u[-1]=u[-2];collisions+=int(self.collision(scene,state));traj.append(state.copy())
-            gd=math.hypot(state[0]-corridor[-1].x,state[1]-corridor[-1].y)
-            stall=stall+1 if gd>prev_goal-.003 else 0;prev_goal=gd
+            proposed=self.model.update(state,*u[0])
+            if self.collision(scene,proposed):
+                safe=[]
+                for v0,d0 in [(0.,0.)]+self.model.get_motion_primitives():
+                    q=self.model.update(state,v0,d0)
+                    if not self.collision(scene,q):safe.append((self.nearest(corridor,q),v0,q,d0))
+                if safe:
+                    _,v0,proposed,d0=max(safe,key=lambda z:(z[0],z[1]));u[0]=[v0,d0]
+            state=proposed;u[:-1]=u[1:];u[-1]=u[-2];collisions+=int(self.collision(scene,state));traj.append(state.copy())
+            gd=math.hypot(state[0]-corridor[-1].x,state[1]-corridor[-1].y);idx=self.nearest(corridor,state)
+            stall=stall+1 if idx<=prev_idx else 0;prev_idx=max(prev_idx,idx)
             if gd<.7:return np.asarray(traj),{'success':collisions==0,'collisions':collisions,'recoveries':recoveries}
-            if stall>35 and enable_recovery:
+            if stall>25 and enable_recovery:
                 rec=self.recovery(scene,state,corridor)
                 if rec is not None:state=rec;traj.append(state.copy());recoveries+=1
                 stall=0
