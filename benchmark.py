@@ -12,7 +12,7 @@ def clamp(x,a,b): return max(a,min(b,x))
 class Scene:
     occ: np.ndarray; risk: np.ndarray; rows: np.ndarray; start: tuple; goal: tuple; dyn: list
 
-def make_scene(seed, n=90):
+def make_scene(seed, n=90, difficulty='moderate'):
     rng=np.random.default_rng(seed); occ=np.zeros((n,n),bool); risk=np.zeros((n,n),float)
     # orchard rows run along y; trunks and row boundaries form the dominant geometry
     rows=[]
@@ -21,13 +21,25 @@ def make_scene(seed, n=90):
         for y in range(6,n-6,7):
             rr=2+rng.integers(0,2); occ[max(0,x-rr):x+rr+1,max(0,y-rr):y+rr+1]=1
             risk[max(0,x-rr-3):x+rr+4,max(0,y-rr-3):y+rr+4]=np.maximum(risk[max(0,x-rr-3):x+rr+4,max(0,y-rr-3):y+rr+4],.35)
-    # fallen branches / crates as unknown obstacles, plus dynamic workers
-    for _ in range(10):
-        x,y=rng.integers(8,n-8,2); occ[x-1:x+2,y-2:y+3]=1; risk[x-4:x+5,y-5:y+6]=np.maximum(risk[x-4:x+5,y-5:y+6],.7)
+    # Realistic in-row disturbances: place branches/crates near corridor edges,
+    # never as arbitrary full-width walls. Difficulty changes count and offset.
+    cfg={'simple':(2,4),'moderate':(5,3),'hard':(8,2)}
+    n_obs,lateral_offset=cfg.get(difficulty,cfg['moderate'])
+    corridor_x=17
+    for _ in range(n_obs):
+        side=int(rng.choice([-1,1])); x=corridor_x+side*lateral_offset; y=int(rng.integers(17,43))
+        occ[x,y]=1
+        risk[max(1,x-3):min(n-1,x+4),max(1,y-3):min(n-1,y+4)]=np.maximum(risk[max(1,x-3):min(n-1,x+4),max(1,y-3):min(n-1,y+4)],.7)
     # start and goal lie in one inter-row corridor; the planner must negotiate
     # fallen branches and moving workers while preserving row alignment.
     start=(17,8); goal=(17,48); occ[start]=occ[goal]=0
-    dyn=[(int(rng.integers(20,n-20)),int(rng.integers(15,n-15)),rng.choice([-1,1])) for _ in range(3)]
+    # Keep launch/goal headlands footprint-clear and preserve a minimum-width
+    # connected lane. Obstacles may narrow or offset the lane but cannot seal it.
+    occ[14:21,5:13]=0; occ[14:21,44:52]=0
+    for y in range(13,44):
+        if occ[15:20,y].all(): occ[16:19,y]=0
+    dyn_count={'simple':1,'moderate':2,'hard':3}.get(difficulty,2)
+    dyn=[(int(rng.choice([14,20,22])),int(rng.integers(18,42)),int(rng.choice([-1,1]))) for _ in range(dyn_count)]
     return Scene(occ,risk,np.array(rows),start,goal,dyn)
 
 def dist(a,b): return math.hypot(a[0]-b[0],a[1]-b[1])
