@@ -9,7 +9,8 @@ def run(n,out):
     os.makedirs(out,exist_ok=True);rows=[]
     variants=[('SE2-Risk-HA*+MPPI (Ours)',True,True,True),('no_global_risk',False,True,True),('no_dynamic_prediction',True,True,False),('no_kinodynamic_recovery',True,False,True)]
     for ep in range(n):
-        base=make_scene(4000+ep)
+        difficulty=['simple','moderate','hard'][ep%3]
+        base=make_scene(4000+ep,difficulty=difficulty)
         for name,use_risk,recovery,dynamic in variants:
             s=base if use_risk else Scene(base.occ,np.zeros_like(base.risk),base.rows,base.start,base.goal,base.dyn)
             planner=SE2HybridAStar();t=time.perf_counter();corridor,gi=planner.plan(s,max_expansions=30000);global_ms=(time.perf_counter()-t)*1000
