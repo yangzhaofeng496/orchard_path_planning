@@ -1,35 +1,41 @@
-# Orchard-RCRA-UA Planner
+# 果园全局-局部协同路径规划
 
-A reproducible 2-D orchard navigation benchmark for a coordinated global-local planner:
+本项目提供一个可复现的二维果园机器人路径规划仿真与评测框架，包含以下核心方法：
 
-- **RCRA\***: Row-Corridor Risk-Aware A* global planning.
-- **Orchard UA planner**: path-tangent heading alignment, dynamic-obstacle uncertainty inflation, safe lateral refinement, and global-path stall recovery.
+- **RCRA\***：行间走廊风险感知 A* 全局规划算法；
+- **果园 UA 局部规划器**：融合全局路径切线航向对齐、动态障碍不确定性膨胀、安全横向调整和全局一致性停滞恢复。
 
-> Scope: simulation benchmark only. The current results do not constitute real-orchard or ROS/Nav2 field validation.
+> 适用范围：本项目目前属于二维仿真 benchmark，相关结果不等同于真实果园或 ROS/Nav2 实车验证结果。
 
-## Why this project
+## 研究背景
 
-Orchard navigation differs from generic indoor planning because tree rows impose corridor structure, trunks require safety margins, and workers or agricultural vehicles introduce dynamic uncertainty. A generic A* + DWA stack may produce a valid global path but still stall when the local window starts with a heading misaligned with the orchard row.
+果园导航与普通室内导航存在明显差异。果树行形成具有方向性的狭长通道，树干要求机器人保持安全距离，作业人员和农业机械还会带来动态不确定性。常规 A* + DWA 虽然能够生成全局路径，但当局部窗口的初始航向与果树行方向不一致时，机器人可能在起步或绕障阶段陷入停滞。
 
-## Contributions
+本项目针对上述问题构建果园全局-局部协同路径规划框架，并提供统一基线、消融实验和结果报告。
 
-1. **Row-corridor risk cost**: combines movement, row/corridor preference, turning cost, and obstacle-risk cost in global search.
-2. **Path-tangent heading alignment**: initializes local motion from the global-path tangent to prevent zero-progress starts.
-3. **Uncertainty-aware dynamic safety band**: predicts moving obstacles and laterally refines risky waypoints in collision-free space.
-4. **Global-consistent stall recovery**: reconnects the local trajectory to safe global-path nodes when progress is lost.
-5. **Auditable evaluation**: includes common baselines, module ablations, fixed seeds, per-episode metrics, and an automatically generated PDF report.
+## 主要创新点
 
-## Baselines
+1. **行间走廊风险代价**：在全局搜索中联合考虑移动距离、行间走廊偏好、转弯代价和障碍风险。
+2. **全局路径切线航向对齐**：根据全局路径切线确定局部推进方向，降低局部规划器零进度停滞的概率。
+3. **不确定性感知动态安全带**：预测动态障碍运动，并在无碰撞空间中对高风险路径节点进行横向调整。
+4. **全局一致性停滞恢复**：局部规划失去进展时，重新连接安全的后续全局路径节点，保持朝向目标的拓扑进展。
+5. **可审计实验体系**：提供常用基线、模块消融、固定随机种子、逐场景指标和自动生成的 PDF 实验报告。
 
-- Greedy + APF
-- Dijkstra + APF
-- A* + APF / DWA / Pure Pursuit
-- RRT* + DWA
-- Hybrid A* + TEB-inspired local planning
+## 对比算法
 
-Hybrid A* and TEB are compact reproducible approximations in this repository, not drop-in replacements for the full ROS/Nav2 implementations.
+- Greedy + APF；
+- Dijkstra + APF；
+- A* + APF；
+- A* + DWA；
+- A* + Pure Pursuit；
+- RRT* + DWA；
+- Hybrid A* + TEB 风格局部规划。
 
-## Installation
+仓库中的 Hybrid A* 和 TEB 为便于复现实验而编写的简化基线，不等同于完整的 ROS/Nav2 官方实现。
+
+## 环境安装
+
+建议使用 Python 3.10 或更高版本。
 
 ```bash
 python3 -m venv .venv
@@ -37,65 +43,79 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Python 3.10+ is recommended.
+## 复现实验
 
-## Reproduce the benchmark
+运行16个固定随机场景：
 
 ```bash
 python benchmark.py --episodes 16 --out results
 ```
 
-Generated files:
+运行结束后会生成：
 
-- `results/metrics.csv`: per-episode measurements.
-- `results/summary.csv`: aggregated comparison.
-- `results/ablation.csv`: module ablations.
-- `results/benchmark.png`: representative trajectories.
-- `results/method.md`: machine-readable summary snapshot.
+- `results/metrics.csv`：每个场景的原始指标；
+- `results/summary.csv`：各算法的聚合结果；
+- `results/ablation.csv`：消融实验结果；
+- `results/benchmark.png`：代表性路径图；
+- `results/method.md`：实验配置与结果摘要。
 
-Generate the PDF report on macOS:
+## 生成 PDF 报告
+
+在 macOS 上运行：
 
 ```bash
 python create_report.py
 ```
 
-The report script currently uses the macOS `STHeiti Medium` font. Change the font path for Linux/Windows.
+报告生成脚本当前使用 macOS 的 `STHeiti Medium` 中文字体。如果在 Linux 或 Windows 上运行，需要修改脚本中的字体路径。
 
-## Metrics
+## 评价指标
 
-| Metric | Meaning | Direction |
+| 指标 | 含义 | 优化方向 |
 |---|---|---|
-| Success rate | Fraction of episodes reaching the goal neighborhood | Higher is better |
-| Mean path length | Accumulated executed local trajectory length | Lower is better among methods with top success |
-| Mean collisions | Mean number of occupied-grid entries | Lower is better |
-| Minimum dynamic clearance | Mean episode-wise minimum distance to moving obstacles | Higher is better among methods with top success |
+| 成功率 | 在规定步数内到达目标邻域的场景比例 | 越高越好 |
+| 平均路径长度 | 局部规划器实际执行轨迹的累计长度 | 在最高成功率方法中越短越好 |
+| 平均碰撞次数 | 轨迹进入占据栅格的平均次数 | 越低越好 |
+| 最小动态安全间距 | 每个场景中机器人与动态障碍最小距离的平均值 | 在最高成功率方法中越大越好 |
 
-Failed methods are excluded from the path-length and clearance `Best` selection to avoid rewarding early termination.
+为了避免失败算法因提前终止而获得虚假的短路径，路径长度和动态安全间距的 `Best` 只在达到最高成功率的方法中进行比较。
 
-## Current result
+## 当前实验结果
 
-On 16 fixed test seeds (`1000-1015`), Ours reaches **100% success with zero collisions**. On a separate check using seeds `2000-2015`, Ours also reaches **100% success**, with mean path length `42.28` and mean dynamic clearance `18.94`.
+在16个固定测试种子（`1000-1015`）上，Ours 达到：
 
-These values should be regenerated on the target machine. Do not treat them as field-performance claims.
+- **成功率：100%**；
+- **碰撞次数：0**；
+- 平均路径长度：`47.16`。
 
-## Repository layout
+在未参与调试的独立种子 `2000-2015` 上，Ours 同样达到：
+
+- **成功率：100%**；
+- **碰撞次数：0**；
+- 平均路径长度：`42.28`；
+- 平均动态安全间距：`18.94`。
+
+以上数值应在目标计算机上重新运行验证，不能直接作为真实果园性能结论。
+
+## 项目结构
 
 ```text
 .
-├── benchmark.py          # simulator, baselines, Ours, evaluation
-├── create_report.py      # PDF report generator
-├── requirements.txt
-├── README.md
-└── results/              # reproducible outputs
+├── benchmark.py          # 场景生成、基线算法、Ours 与实验评估
+├── create_report.py      # PDF 实验报告生成器
+├── requirements.txt      # Python 依赖
+├── README.md             # 项目说明
+└── results/              # 可复现实验结果
 ```
 
-## Limitations and next steps
+## 局限性与后续工作
 
-- 2-D occupancy grids only; no localization drift or sensor noise.
-- Simplified vehicle dynamics and simplified Hybrid A*/TEB baselines.
-- No slope, mud, wheel slip, canopy occlusion, or real controller latency.
-- Next: official ROS/Nav2 baselines, 100+ held-out scenes, confidence intervals, Gazebo/Isaac Sim, and real-orchard trials.
+- 当前仅使用二维占据栅格，没有加入定位漂移和传感器噪声；
+- Hybrid A* 和 TEB 基线属于简化实现；
+- 尚未考虑坡度、泥泞、车轮打滑、树冠遮挡和真实控制延迟；
+- 场景数量仍然有限，后续应扩展到100个以上独立测试场景；
+- 后续需要接入标准 ROS/Nav2 基线、Gazebo/Isaac Sim 和真实果园实验。
 
-## Citation
+## 引用
 
-This is an experimental research prototype. A formal citation will be added after the associated manuscript is finalized.
+本项目目前属于实验性研究原型。相关论文完成后，将在此补充正式引用信息。
