@@ -70,7 +70,7 @@ def ci95(x):
 def run(n,out):
     os.makedirs(out,exist_ok=True); methods=['A*+DWA','Hybrid A*+TEB','Greedy+APF','RCRA*+DWA','A*+UA','RCRA*+UA (Ours)']; rows=[]
     for i in range(n):
-        split='train' if i<n//4 else 'validation' if i<n//2 else 'test'; difficulty=['simple','moderate','hard'][i%3]; s=make_scene(3000+i)
+        split='train' if i<n//4 else 'validation' if i<n//2 else 'test'; difficulty=['simple','moderate','hard'][i%3]; s=make_scene(3000+i,difficulty=difficulty)
         planning_scene=inflate_scene(s)
         for m in methods:
             g,p,ms=plan(planning_scene,m); states,u,c=track(s,p); r=eval_one(s,states,u,ms,c); r.update(scene=i,split=split,difficulty=difficulty,method=m,footprint_collisions=c); rows.append(r)
