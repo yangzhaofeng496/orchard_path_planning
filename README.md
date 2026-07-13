@@ -45,27 +45,6 @@ Python 3.10+ is recommended.
 python benchmark.py --episodes 16 --out results
 ```
 
-Run the Ackermann/footprint-aware audit:
-
-```bash
-python advanced_benchmark.py --scenes 30 --out results
-python create_ackermann_report.py
-```
-
-Run the vehicle-feasible two-layer Ours and its ablations:
-
-```bash
-python two_layer_benchmark.py --episodes 6 --out results
-```
-
-The two-layer implementation consists of:
-
-- `se2_hybrid_astar.py`: `(x, y, yaw)` search using NWD01 forward/reverse and five-steering-angle primitives, with swept-footprint collision checks and row/risk costs.
-- `risk_corridor_mppi.py`: risk-corridor MPPI over velocity/steering sequences, dynamic-obstacle prediction, curvature/control regularization, and kinodynamically checked recovery.
-- `two_layer_benchmark.py`: full method and ablations for global risk, dynamic prediction, and recovery.
-
-The advanced audit imports the Xiaomayi NWD01 bicycle model, uses a rectangular vehicle footprint, checks continuous tracked trajectories, separates train/validation/test scenes, and reports planning time, travel time, curvature, smoothness, static/dynamic clearance, footprint collisions, means, and 95% confidence intervals.
-
 Generated files:
 
 - `results/metrics.csv`: per-episode measurements.
@@ -92,21 +71,6 @@ The report script currently uses the macOS `STHeiti Medium` font. Change the fon
 | Minimum dynamic clearance | Mean episode-wise minimum distance to moving obstacles | Higher is better among methods with top success |
 
 Failed methods are excluded from the path-length and clearance `Best` selection to avoid rewarding early termination.
-
-## Scenario design
-
-The generator uses a physically interpretable orchard corridor instead of arbitrary full-map obstacle placement:
-
-- Tree rows define the structural corridor.
-- Start and goal headlands are footprint-clear.
-- Static branches/crates are placed near corridor edges and cannot form an artificial full-width wall.
-- A minimum connected central lane is preserved for the NWD01 footprint.
-- `simple`, `moderate`, and `hard` change edge-obstacle count/proximity and the number of crossing dynamic obstacles.
-- Every generated evaluation scene is pre-checked by the SE(2) Hybrid A*; planner/controller failures are therefore separated from map infeasibility.
-
-With seeds `4000-4011`, all 12 simple/moderate/hard scenes have a swept-footprint-feasible global corridor. This replaces the earlier generator, in which random boxes could make moderate and hard scenes physically unreachable.
-
-In the initial six-scene vehicle-feasible comparison, Ours, SE(2) Hybrid A* + Pure Pursuit, and SE(2) Hybrid A* + TEB-like tracking all achieve 100% success with zero footprint collisions. This confirms interface fairness; it does not yet establish superiority. Larger and more interactive dynamic test sets are required to separate safety margin, efficiency, smoothness, and computation cost.
 
 ## Current result
 
