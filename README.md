@@ -45,6 +45,27 @@ Python 3.10+ is recommended.
 python benchmark.py --episodes 16 --out results
 ```
 
+Run the Ackermann/footprint-aware audit:
+
+```bash
+python advanced_benchmark.py --scenes 30 --out results
+python create_ackermann_report.py
+```
+
+Run the vehicle-feasible two-layer Ours and its ablations:
+
+```bash
+python two_layer_benchmark.py --episodes 6 --out results
+```
+
+The two-layer implementation consists of:
+
+- `se2_hybrid_astar.py`: `(x, y, yaw)` search using NWD01 forward/reverse and five-steering-angle primitives, with swept-footprint collision checks and row/risk costs.
+- `risk_corridor_mppi.py`: risk-corridor MPPI over velocity/steering sequences, dynamic-obstacle prediction, curvature/control regularization, and kinodynamically checked recovery.
+- `two_layer_benchmark.py`: full method and ablations for global risk, dynamic prediction, and recovery.
+
+The advanced audit imports the Xiaomayi NWD01 bicycle model, uses a rectangular vehicle footprint, checks continuous tracked trajectories, separates train/validation/test scenes, and reports planning time, travel time, curvature, smoothness, static/dynamic clearance, footprint collisions, means, and 95% confidence intervals.
+
 Generated files:
 
 - `results/metrics.csv`: per-episode measurements.
