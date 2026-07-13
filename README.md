@@ -93,6 +93,19 @@ The report script currently uses the macOS `STHeiti Medium` font. Change the fon
 
 Failed methods are excluded from the path-length and clearance `Best` selection to avoid rewarding early termination.
 
+## Scenario design
+
+The generator uses a physically interpretable orchard corridor instead of arbitrary full-map obstacle placement:
+
+- Tree rows define the structural corridor.
+- Start and goal headlands are footprint-clear.
+- Static branches/crates are placed near corridor edges and cannot form an artificial full-width wall.
+- A minimum connected central lane is preserved for the NWD01 footprint.
+- `simple`, `moderate`, and `hard` change edge-obstacle count/proximity and the number of crossing dynamic obstacles.
+- Every generated evaluation scene is pre-checked by the SE(2) Hybrid A*; planner/controller failures are therefore separated from map infeasibility.
+
+With seeds `4000-4011`, all 12 simple/moderate/hard scenes have a swept-footprint-feasible global corridor. This replaces the earlier generator, in which random boxes could make moderate and hard scenes physically unreachable.
+
 ## Current result
 
 On 16 fixed test seeds (`1000-1015`), Ours reaches **100% success with zero collisions**. On a separate check using seeds `2000-2015`, Ours also reaches **100% success**, with mean path length `42.28` and mean dynamic clearance `18.94`.
