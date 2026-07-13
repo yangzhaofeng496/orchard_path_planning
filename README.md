@@ -106,6 +106,8 @@ The generator uses a physically interpretable orchard corridor instead of arbitr
 
 With seeds `4000-4011`, all 12 simple/moderate/hard scenes have a swept-footprint-feasible global corridor. This replaces the earlier generator, in which random boxes could make moderate and hard scenes physically unreachable.
 
+In the initial six-scene vehicle-feasible comparison, Ours, SE(2) Hybrid A* + Pure Pursuit, and SE(2) Hybrid A* + TEB-like tracking all achieve 100% success with zero footprint collisions. This confirms interface fairness; it does not yet establish superiority. Larger and more interactive dynamic test sets are required to separate safety margin, efficiency, smoothness, and computation cost.
+
 ## Current result
 
 On 16 fixed test seeds (`1000-1015`), Ours reaches **100% success with zero collisions**. On a separate check using seeds `2000-2015`, Ours also reaches **100% success**, with mean path length `42.28` and mean dynamic clearance `18.94`.
