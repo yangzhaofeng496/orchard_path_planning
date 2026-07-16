@@ -1,0 +1,77 @@
+planner:
+  max_feedback_iterations: 6
+  accept_best_score: true
+  debug_log: true
+
+adaptive_window:
+  min_lookahead: 3.0
+  max_lookahead: 12.0
+  base_lookahead: 7.0
+  sensing_radius: 6.0
+  density_reference: 0.22
+  curvature_reference: 0.25
+  speed_gain: 1.2
+  density_gain: 3.0
+  curvature_gain: 3.0
+  free_space_gain: 1.5
+
+feedback:
+  obstacle_multiplier: 1.5
+  kinematic_multiplier: 1.35
+  omega_multiplier: 1.2
+  shrink_factor: 0.78
+  expand_factor: 1.12
+  min_window_scale: 0.55
+  max_window_scale: 1.35
+  max_weight_multiplier: 5.0
+
+teb:
+  wheel_base: 2.5
+  max_speed: 2.0
+  max_accel: 1.0
+  max_steer_deg: 30.0
+  dt: 0.1
+  num_samples: 20
+  max_iterations: 50
+  goal_tolerance: 0.5
+  vehicle_front_length: 1.0
+  vehicle_rear_length: 0.5
+  vehicle_width: 0.8
+  vehicle_safety_margin: 0.15
+  w_time: 1.0
+  w_obstacle: 50.0
+  w_kinematics: 20.0
+  w_acceleration: 5.0
+  w_omega: 10.0
+  w_path: 1.0
+  obstacle_min_dist: 0.6
+  obstacle_influence_dist: 1.8
+  collision_check_resolution: 0.1
+  collision_stop_horizon: 3.0
+  debug_log: false
+
+dwa:
+  wheel_base: 2.5
+  max_speed: 2.0
+  max_accel: 1.0
+  max_decel: 1.0
+  max_steer_deg: 30.0
+  max_steer_rate_deg: 70.0
+  speed_samples: 7
+  steer_samples: 19
+  dt: 0.1
+  predict_time: 2.5
+  lookahead_distance: 3.0
+  goal_tolerance: 0.5
+  vehicle_front_length: 1.0
+  vehicle_rear_length: 0.5
+  vehicle_width: 0.8
+  vehicle_safety_margin: 0.15
+  goal_cost_weight: 3.0
+  path_cost_weight: 2.0
+  heading_cost_weight: 0.8
+  obstacle_cost_weight: 3.5
+  speed_cost_weight: 0.45
+  steering_cost_weight: 0.2
+  steering_change_cost_weight: 0.5
+  progress_reward_weight: 0.04
