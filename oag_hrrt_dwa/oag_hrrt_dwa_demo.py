@@ -153,7 +153,7 @@ class PathCollisionChecker:
             pose = Pose(x, y, yaw)
 
             # 检查该位姿是否与障碍物碰撞
-            from vehicle.vehicle_collision_test import check_pose_collision
+            from vehicle.vehicle_collision import check_pose_collision
             if check_pose_collision(pose, self.vehicle, self.obstacles):
                 return False  # 有碰撞
 

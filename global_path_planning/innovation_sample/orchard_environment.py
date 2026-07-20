@@ -10,7 +10,7 @@ from dataclasses import dataclass
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 
-from vehicle.vehicle_collision_test import CircleObstacle
+from vehicle.vehicle_collision import CircleObstacle
 from hybrid_sampler import GoalRectangle
 
 

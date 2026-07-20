@@ -16,8 +16,8 @@ plt.rcParams['axes.unicode_minus'] = False  # 解决负数显示问题
 # 添加项目根目录到 sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 
-from vehicle.reeds_shepp_path_test import Pose
-from vehicle.vehicle_collision_test import (
+from vehicle.reeds_shepp_path import Pose
+from vehicle.vehicle_collision import (
     VehicleGeometry,
     CircleObstacle,
 )
@@ -116,7 +116,7 @@ class PathCollisionChecker:
             pose = Pose(x, y, yaw)
 
             # 检查该位姿是否与障碍物碰撞
-            from vehicle.vehicle_collision_test import check_pose_collision
+            from vehicle.vehicle_collision import check_pose_collision
             if check_pose_collision(pose, self.vehicle, self.obstacles):
                 return False  # 有碰撞
 

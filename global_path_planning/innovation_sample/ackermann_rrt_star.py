@@ -8,9 +8,9 @@ from typing import Optional
 # 添加项目根目录到 sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 
-from vehicle.reeds_shepp_path_test import Pose, plan_reeds_shepp_path
+from vehicle.reeds_shepp_path import Pose, plan_reeds_shepp_path
 from vehicle.dubins_path_test import plan_dubins_path
-from vehicle.vehicle_collision_test import (
+from vehicle.vehicle_collision import (
     VehicleGeometry,
     CircleObstacle,
     check_path_collision,

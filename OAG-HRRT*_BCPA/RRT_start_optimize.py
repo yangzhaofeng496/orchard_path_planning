@@ -25,8 +25,8 @@ for path in (INNOVATION_DIR, PROJECT_ROOT):
 from ackermann_rrt_star import AckermannRRTStar
 from hybrid_sampler import SamplingCorridor
 from orchard_environment import load_environment
-from vehicle.reeds_shepp_path_test import Pose
-from vehicle.vehicle_collision_test import VehicleGeometry, check_pose_collision
+from vehicle.reeds_shepp_path import Pose
+from vehicle.vehicle_collision import VehicleGeometry, check_pose_collision
 
 # 导入路径优化器
 sys.path.insert(0, os.path.abspath(os.path.join(PROJECT_ROOT, "path_optimizer")))

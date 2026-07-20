@@ -12,7 +12,7 @@ from orchard_environment import (
     make_goal_rectangle,
     make_hybrid_benchmark_environment,
 )
-from vehicle.vehicle_collision_test import CircleObstacle
+from vehicle.vehicle_collision import CircleObstacle
 
 
 METHODS = ("RRT*", "GoalBias", "Hybrid")

@@ -31,8 +31,8 @@ for import_dir in (INNOVATION_DIR, PROJECT_ROOT):
 
 from ackermann_rrt_star import AckermannRRTStar
 from hybrid_sampler import SamplingCorridor
-from vehicle.reeds_shepp_path_test import Pose
-from vehicle.vehicle_collision_test import VehicleGeometry, CircleObstacle, check_pose_collision
+from vehicle.reeds_shepp_path import Pose
+from vehicle.vehicle_collision import VehicleGeometry, CircleObstacle, check_pose_collision
 # from RRT_start_optimize import (
 from RRT_start_optimize_corridor import (
     DEFAULT_CONFIG_PATH,

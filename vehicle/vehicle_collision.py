@@ -9,7 +9,7 @@ from matplotlib.patches import Circle, Polygon
 # 添加 vehicle 目录到 sys.path，以便导入同目录的模块
 sys.path.insert(0, os.path.dirname(__file__))
 
-from reeds_shepp_path_test import (
+from vehicle.reeds_shepp_path import (
     Pose,
     ReedsSheppPath,
     plan_reeds_shepp_path,

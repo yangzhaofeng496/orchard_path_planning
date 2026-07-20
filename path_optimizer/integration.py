@@ -15,12 +15,12 @@ PROJECT_ROOT = os.path.abspath(os.path.join(CURRENT_DIR, ".."))
 sys.path.insert(0, PROJECT_ROOT)
 
 from path_optimizer import ShortcutOptimizer, CollisionChecker
-from vehicle.vehicle_collision_test import (
+from vehicle.vehicle_collision import (
     VehicleGeometry,
     CircleObstacle,
     Pose,
 )
-from vehicle.reeds_shepp_path_test import plan_reeds_shepp_path
+from vehicle.reeds_shepp_path import plan_reeds_shepp_path
 from typing import List, Tuple
 
 
@@ -69,7 +69,7 @@ class VehicleCollisionChecker:
             pose = Pose(x, y, yaw)
 
             # 检查该位姿是否与障碍物碰撞
-            from vehicle.vehicle_collision_test import check_pose_collision
+            from vehicle.vehicle_collision import check_pose_collision
             if check_pose_collision(pose, self.vehicle, self.obstacles):
                 return False  # 有碰撞
 
