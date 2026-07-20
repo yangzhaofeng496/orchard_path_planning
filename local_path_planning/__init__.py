@@ -13,8 +13,8 @@ from .base import (
     Control,
 )
 from .config import DWAConfig, TEBConfig
-from .dwa import DWAPlanner
-from .teb import TEBPlanner
+from .dwa.dwa import DWAPlanner
+from .teb.teb import TEBPlanner
 
 # 配置加载器
 from .config_loader import (

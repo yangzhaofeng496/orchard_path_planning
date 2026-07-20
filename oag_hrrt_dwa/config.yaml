@@ -7,7 +7,7 @@
 # ----------------------------------------------------------------------------
 environment:
   # 环境地图文件路径
-  map_path: "./orchard_scene.npz"
+  map_path: "./orchard_complex.npz"
 
   # 环境生成参数
   generation:
@@ -15,7 +15,7 @@ environment:
     seed: 42
 
     # 栅格大小
-    grid_size: 90
+    grid_size: 150
 
     # 栅格单元对应的实际距离（米）
     cell_size: 1.0
@@ -44,6 +44,12 @@ environment:
       x: null  # null = grid_size // 2
       y: null  # null = grid_size - 5
 
+# 固定起点/终点位姿。单位：x/y 为米，yaw_deg 为度。
+# 取消注释并填写后，程序启动即自动规划；也可用 --start-pose/--goal-pose 覆盖。
+poses:
+  start: null  # 例如: {x: 2.6, y: 5.0, yaw_deg: 90.0}
+  goal: null   # 例如: {x: 10.0, y: 15.0, yaw_deg: 90.0}
+
 # ----------------------------------------------------------------------------
 # RRT* 规划器配置
 # ----------------------------------------------------------------------------
@@ -53,10 +59,11 @@ planner:
 
   # 动态采样矩形尺寸（米）
   rectangle:
-    length: 30.0
-    width: 22.0
+    length: 10.0
+    width: 5.0
 
   # 平滑迭代次数
+  # 简化模式：投影通道连接后不再执行 Chaikin 平滑
   smoothing_iterations: 10
 
   # 是否使用目标连接器（goal connector）
@@ -74,23 +81,69 @@ planner:
 # ----------------------------------------------------------------------------
 vehicle:
   # 轮距（米）
-  wheel_base: 2.5
+  wheel_base: 0.9
+
+  # 全局规划、通道对齐和局部控制统一使用该最小转弯半径
+  min_turning_radius: 3.0
 
   # 最大转向角（度）
-  max_steer_deg: 30.0
+  max_steer_deg: 16.70
 
   # 车辆几何尺寸
   geometry:
-    front_length: 3.0
-    rear_length: 1.0
-    width: 1.6
+    front_length: 1.25
+    rear_length: 0.35
+    width: 0.8
     safety_margin: 0.18
+
+# ----------------------------------------------------------------------------
+# 两圆通道提前对齐（投影方法）
+# ----------------------------------------------------------------------------
+corridor_alignment:
+  enabled: true
+
+  # 候选必须能容纳车身、净宽不超过车宽的指定倍数，并且路径真实
+  # 穿过两圆门线；不再限制门线交点到通道中心的距离。
+  search:
+    max_gap_width_factor: 6.0
+
+  # 投影方法参数
+  projection:
+    use_projection_method: true        # 使用基于最大直径投影的方法
+    connect_only: true                 # 仅直连投影段，不做S曲线、平滑或可行性检查
+    extension_margin: 1.0              # 在最大直径基础上的延长余量(m)
+    search_step: 1                   # 沿路径搜索连接点的步长(m)
+    max_search_distance: 5.0          # 最大搜索距离(m)
+    skip_curvature_rate_check: true    # 跳过曲率率检查
+    relaxed_curvature_check: true      # 使用宽松的曲率检查
+    skip_alignment_check: false        # 严格检查通道段垂直方向和航向
+
+  # 阿克曼曲率约束；最小半径统一读取 vehicle.min_turning_radius
+  curvature:
+    enforce_global: true          # 无窄通道时也修正不满足3m半径的急弯
+    tolerance: 0.5                # 曲率检查相对容差（投影方法使用更宽松的容差）
+    max_iterations: 1000
+    relaxation: 0.35              # 每轮曲率修正强度(0-1]
+
+  # 路径连接和全局样条平滑
+  smoothing:
+    path_resample_spacing: 0.2
+    connection_points: 20
+    global_enabled: true
+    smooth_factor: 0.3
+    spline_smoothing: 0.1
+
+  # 交互选择和窄通道优化前后轨迹对比样式
+  visualization:
+    yaw_line_length: 4.0
+    unoptimized_line_width: 1.8
+    optimized_line_width: 2.5
 
 # ----------------------------------------------------------------------------
 # 局部规划器选择：可选值：dwa、teb、adaptive_teb_dwa
 # ----------------------------------------------------------------------------
 local_planner:
-  type: teb
+  type: dwa
 
 
 # ----------------------------------------------------------------------------
@@ -99,7 +152,7 @@ local_planner:
 dwa:
   # 控制周期（秒）
   # 值越小，更新越频繁，仿真越流畅（推荐：0.05-0.10）
-  dt: 0.05
+  dt: 0.1
 
   # 预测时间范围（秒）
   predict_time: 2.8
@@ -137,31 +190,51 @@ dwa:
 # 将 local_planner.type 改成 teb 即可启用
 # ----------------------------------------------------------------------------
 teb:
+  # 非线性求解器：slsqp | g2o | auto
+  # Homebrew g2o 仅提供 C++ 库；未安装 TEB g2o Python 适配器时按下项回退。
+  solver: g2o
+  solver_fallback: true
+
   dt: 0.1
-  max_speed: 2.0
+  max_speed: 10.0
+  # 防止优化器把首段压缩为近零速度；从静止状态会受最大加速度约束逐步爬升
+  min_speed: 1
+  preferred_speed: 1.20
   max_accel: 1.0
   goal_tolerance: 0.5
-  num_samples: 20
-  max_iterations: 50
+  # 位置和航向同时满足才判定到达
+  goal_yaw_tolerance_deg: 10
+  # 从终点前该距离开始渐进增加航向权重（米）
+  goal_yaw_blend_distance: 5.0
+  # 6 m 前瞻下 10 个节点约 0.67 m/段，兼顾弯道表达与实时性
+  num_samples: 10
+  # g2o 数值残差每轮调用目标函数约 O(4*num_samples) 次，避免固定跑满 60 轮
+  max_iterations: 30
 
   # 优化权重
-  w_time: 1.0
-  w_obstacle: 50.0
-  w_kinematics: 20.0
-  w_acceleration: 5.0
-  w_omega: 10.0
-  w_path: 1.0
+  w_time: 1.6
+  w_obstacle: 10
+  w_kinematics: 16.0
+  w_acceleration: 4.5
+  w_omega: 14.0
+  w_path: 0.6
+  # 路径切向航向跟踪，真实终点姿态使用更强约束
+  weight_path_yaw: 1.0
+  weight_goal_yaw: 1.0
+  w_velocity: 11.8
+  w_steering: 20.0
 
   # 障碍物安全距离
   obstacle_min_dist: 1.5
   obstacle_influence_dist: 3.0
 
   # 诊断日志：每 log_interval 个规划周期输出一次；故障始终输出
+  # 调试阶段逐周期输出失败原因；稳定后可改回 false
   debug_log: true
-  log_interval: 10
+  log_interval: 1
 
   # TEB 连续轨迹硬碰撞检查
-  collision_check_resolution: 0.10
+  collision_check_resolution: 0.15
 
   # 只有车辆前方该路径距离内的碰撞才立即停车；远处碰撞继续重规划
   collision_stop_horizon: 3.0
@@ -242,7 +315,7 @@ path_optimization:
   # 随机捷径最大迭代次数
   # 值越大，优化效果越好，但耗时更长
   # 推荐范围：50-200
-  max_iterations: 100
+  max_iterations: 40
 
   # 最小点间距（米）
   # 小于此距离的相邻点会被删除
@@ -254,6 +327,7 @@ path_optimization:
 
   # 拐角检测、曲率约束插补和速度前瞻
   curvature_smoothing:
+    # 启用通道前的曲率平滑；成功通道中心段保持锁定，不做破坏性后平滑
     enabled: true
 
     # 阿克曼车辆允许的最大曲率 (1/m)，通常 tan(max_steer)/wheel_base
@@ -261,7 +335,7 @@ path_optimization:
     max_curvature: 0.23
 
     # 平滑路径的等弧长采样间隔（米）
-    interpolation_spacing: 0.20
+    interpolation_spacing: 0.35
 
     # 超过该方向变化角度即识别为拐角
     corner_angle_threshold_deg: 8.0
@@ -288,11 +362,11 @@ path_optimization:
   random_seed: 42
 
   # 是否打印详细优化信息
-  verbose: true
+  verbose: false
 
   # 碰撞检测分辨率（米）
   # 检查捷径路径时的采样间隔
-  collision_check_resolution: 0.1
+  collision_check_resolution: 0.2
 
 # ----------------------------------------------------------------------------
 # 随机种子

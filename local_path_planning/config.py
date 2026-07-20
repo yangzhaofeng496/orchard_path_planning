@@ -48,6 +48,8 @@ class TEBConfig:
     # 车辆参数
     wheel_base: float = 2.5
     max_speed: float = 2.0
+    min_speed: float = 0.20
+    preferred_speed: float = 1.20
     max_accel: float = 1.0
     max_decel: float = 1.0
     max_steer_deg: float = 30.0
@@ -57,8 +59,14 @@ class TEBConfig:
     num_samples: int = 20
     max_iterations: int = 50
     goal_tolerance: float = 0.5
+    goal_yaw_tolerance_deg: float = 5.0
     lookahead_distance: float = 6.0
     max_dt: float = 1.5
+
+    # 非线性求解器：slsqp、g2o 或 auto。
+    # g2o 需要项目级 Python/C++ 适配器，Homebrew 的 CLI 本身不能求解自定义 TEB 边。
+    solver: str = "slsqp"
+    solver_fallback: bool = True
 
     # 车辆几何
     vehicle_front_length: float = 3.0
@@ -73,6 +81,10 @@ class TEBConfig:
     w_acceleration: float = 5.0      # 加速度平滑权重
     w_omega: float = 10.0            # 角速度约束权重
     w_path: float = 1.0              # 路径跟踪权重
+    weight_path_yaw: float = 1.0     # 路径航向角跟踪权重
+    weight_goal_yaw: float = 15.0    # 真实终点航向角权重
+    w_velocity: float = 8.0          # 期望速度权重，避免首段速度退化为零
+    w_steering: float = 3.0          # 转向使用权重，避免无障碍时持续打满方向
 
     # 障碍物安全参数
     obstacle_min_dist: float = 1.5           # 最小安全距离（米）

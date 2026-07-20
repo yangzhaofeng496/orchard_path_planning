@@ -1,0 +1,154 @@
+# Corridor Configuration for Interactive Path Refiner
+# Author: Claude Code
+# Date: 2026-07-19
+
+# Visualization settings
+visualization:
+  figure_size: [14, 10]  # Width, Height in inches
+  axis_limits:
+    x_min: -5
+    x_max: 25
+    y_min: -8
+    y_max: 8
+  grid: true
+  grid_alpha: 0.3
+
+# Circle configurations
+circles:
+  # Number of circles (currently support 2)
+  count: 2
+
+  # Circle 1 configuration
+  circle_1:
+    x: 10.0          # Initial X position (m)
+    y: 3.0           # Initial Y position (m)
+    radius: 1.8      # Radius (m)
+    color: 'black'   # Circle color
+    linestyle: '--'  # Line style: '-', '--', '-.', ':'
+    linewidth: 3     # Line width
+    alpha: 0.9       # Transparency (0-1)
+
+  # Circle 2 configuration
+  circle_2:
+    x: 10.0          # Initial X position (m)
+    y: -3.0          # Initial Y position (m)
+    radius: 2.8      # Radius (m)
+    color: 'black'   # Circle color
+    linestyle: '--'  # Line style
+    linewidth: 3     # Line width
+    alpha: 0.9       # Transparency
+
+  # Center point (draggable handle)
+  center:
+    color: 'red'     # Center point color
+    marker: 'o'      # Marker style: 'o', 's', '^', '*', etc.
+    markersize: 10   # Marker size
+    alpha: 0.9       # Transparency
+
+# Path planning settings
+path:
+  num_points: 50     # Number of points in planned path
+
+  # Original path style
+  original:
+    color: 'blue'
+    linestyle: '-'
+    linewidth: 2
+    alpha: 0.6
+    label: 'Planned Path'
+
+  # Refined path style
+  refined:
+    color: 'green'
+    linestyle: '-'
+    linewidth: 3
+    alpha: 0.9
+    label: 'Refined Path'
+
+# Marker styles
+markers:
+  start:
+    color: 'green'
+    marker: 'o'
+    markersize: 15
+    label: 'Start'
+    zorder: 10
+
+  goal:
+    color: 'red'
+    marker: '*'
+    markersize: 20
+    label: 'Goal'
+    zorder: 10
+
+  corridor_center:
+    color: 'red'
+    marker: '*'
+    markersize: 20
+    label: 'Corridor Center'
+    zorder: 10
+
+  adjust_start:
+    color: 'magenta'
+    marker: 'o'
+    markersize: 10
+    label: 'Adjust Start'
+    zorder: 10
+
+  adjust_end:
+    color: 'cyan'
+    marker: 'o'
+    markersize: 10
+    label: 'Adjust End'
+    zorder: 10
+
+# Legend settings
+legend:
+  location: 'upper right'
+  fontsize: 10
+
+# Info text box settings
+info_box:
+  position: [0.02, 0.98]  # [x, y] in axes coordinates
+  verticalalignment: 'top'
+  fontsize: 10
+  bbox:
+    boxstyle: 'round'
+    facecolor: 'wheat'
+    alpha: 0.8
+
+# Interaction settings
+interaction:
+  picker_tolerance: 5  # Picking tolerance in points
+
+# Preset configurations for different scenarios
+presets:
+  # Narrow corridor (small circles, close together)
+  narrow:
+    circle_1: {x: 10.0, y: 2.0, radius: 0.6}
+    circle_2: {x: 10.0, y: -2.0, radius: 0.6}
+
+  # Wide corridor (large circles, far apart)
+  wide:
+    circle_1: {x: 10.0, y: 4.0, radius: 1.0}
+    circle_2: {x: 10.0, y: -4.0, radius: 1.0}
+
+  # Tight corridor (small circles, very close)
+  tight:
+    circle_1: {x: 10.0, y: 1.5, radius: 0.5}
+    circle_2: {x: 10.0, y: -1.5, radius: 0.5}
+
+  # Asymmetric corridor (different sizes)
+  asymmetric:
+    circle_1: {x: 10.0, y: 3.0, radius: 1.2}
+    circle_2: {x: 10.0, y: -2.0, radius: 0.6}
+
+  # Diagonal corridor (circles at different x positions)
+  diagonal:
+    circle_1: {x: 8.0, y: 3.0, radius: 0.8}
+    circle_2: {x: 12.0, y: -3.0, radius: 0.8}
+
+  # Default (standard configuration)
+  default:
+    circle_1: {x: 10.0, y: 3.0, radius: 0.8}
+    circle_2: {x: 10.0, y: -3.0, radius: 0.8}
