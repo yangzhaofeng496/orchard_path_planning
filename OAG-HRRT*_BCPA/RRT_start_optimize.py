@@ -251,6 +251,10 @@ def plan_global_path(
     rectangle_width=22.0,
     use_goal_connector=False,
     allow_reverse=False,
+    use_ackermann_constraints=True,
+    goal_probability=0.20,
+    tangent_probability=0.10,
+    adaptive_sampling_probabilities=False,
 ):
     """
     使用 OAG-HRRT* 规划全局路径
@@ -294,6 +298,9 @@ def plan_global_path(
     print(f"[规划] 终点: ({goal_pose.x:.2f}, {goal_pose.y:.2f}, {math.degrees(goal_pose.yaw):.1f}°)")
     print(f"[规划] 最大迭代: {max_iterations}")
     print(f"[规划] 障碍物数: {len(env.obstacles)}")
+    print(f"[规划] 连接模型: {'阿克曼曲率约束' if use_ackermann_constraints else '经典RRT*直线连接'}")
+    print(f"[规划] 目标偏置概率: {goal_probability:.2f}")
+    print(f"[规划] 切向采样概率: {tangent_probability:.2f}")
     print(f"{'='*70}\n")
 
     planner = AckermannRRTStar(
@@ -303,6 +310,7 @@ def plan_global_path(
         vehicle=vehicle,
         obstacles=env.obstacles,
         curvature=curvature,
+        use_ackermann_constraints=use_ackermann_constraints,
         expand_length=3.0,
         step_size=0.08,
         max_iterations=max_iterations,
@@ -311,7 +319,9 @@ def plan_global_path(
         corridors=corridors,
         goal_rectangle=env.goal_rectangle,
         rectangle_anchor_mode="closest_to_goal",
-        goal_probability=0.20,
+        goal_probability=goal_probability,
+        tangent_probability=tangent_probability,
+        adaptive_sampling_probabilities=adaptive_sampling_probabilities,
         corridor_probability=0.0,
         rectangle_probability=0.45,
         allow_reverse=allow_reverse,
@@ -322,7 +332,6 @@ def plan_global_path(
         shrink_activation_distance=18.0,
         near_anchor_probability=0.55,
         near_anchor_length_ratio=0.40,
-        adaptive_sampling_probabilities=True,
         cluster_shape="ellipse",
         use_goal_connector=use_goal_connector,
         relax_goal_yaw=False,
@@ -679,6 +688,18 @@ def main():
         rectangle_width=args.rectangle_width,
         use_goal_connector=args.use_goal_connector,
         allow_reverse=args.allow_reverse,
+        use_ackermann_constraints=bool(
+            planner_config.get('use_ackermann_constraints', True)
+        ),
+        goal_probability=float(
+            planner_config.get('goal_probability', 0.20)
+        ),
+        tangent_probability=float(
+            planner_config.get('tangent_probability', 0.10)
+        ),
+        adaptive_sampling_probabilities=bool(
+            planner_config.get('adaptive_sampling_probabilities', False)
+        ),
     )
 
     if result is None:

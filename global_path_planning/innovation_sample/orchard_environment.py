@@ -11,7 +11,7 @@ from dataclasses import dataclass
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 
 from vehicle.vehicle_collision import CircleObstacle
-from hybrid_sampler import GoalRectangle
+from global_path_planning.innovation_sample.hybrid_sampler import GoalRectangle
 
 
 @dataclass
@@ -24,6 +24,7 @@ class OrchardEnvironment:
     goal_pos: tuple   # (x, y) 目标坐标
     bounds: tuple     # (x_min, x_max, y_min, y_max)
     description: str  # 环境描述
+    start_goal_pairs: list = None  # 可选：多对起点终点 [((x1,y1), (x2,y2)), ...]
 
 
 def make_goal_rectangle(start_pos, goal_pos, length, width, forward_offset=0.0):
@@ -351,15 +352,21 @@ def make_density_environment(
     seed=0,
     rectangle_length=30.0,
     rectangle_width=20.0,
+    obstacle_clearance=2.0,
 ):
-    """生成固定范围、不同圆形障碍数量的随机果园地图。"""
+    """生成固定范围、彼此不重叠的零散圆形障碍地图。
+
+    ``obstacle_clearance`` 是两个障碍物边缘之间保留的最小空隙。
+    """
     rng = np.random.default_rng(seed)
     bounds = (0.0, 90.0, 0.0, 90.0)
     start_pos = (8.0, 45.0)
     goal_pos = (82.0, 45.0)
     obstacles = []
     attempts = 0
-    while len(obstacles) < int(obstacle_count) and attempts < obstacle_count * 100:
+    max_attempts = max(1000, int(obstacle_count) * 500)
+    clearance = max(0.0, float(obstacle_clearance))
+    while len(obstacles) < int(obstacle_count) and attempts < max_attempts:
         attempts += 1
         x = float(rng.uniform(5.0, 85.0))
         y = float(rng.uniform(5.0, 85.0))
@@ -368,7 +375,20 @@ def make_density_environment(
             continue
         if math.hypot(x - goal_pos[0], y - goal_pos[1]) < radius + 6.0:
             continue
+        if any(
+            math.hypot(x - obstacle.x, y - obstacle.y)
+            < radius + obstacle.radius + clearance
+            for obstacle in obstacles
+        ):
+            continue
         obstacles.append(CircleObstacle(x, y, radius))
+
+    if len(obstacles) < int(obstacle_count):
+        raise RuntimeError(
+            f"无法在 {max_attempts} 次尝试内放置 {obstacle_count} 个互不重叠的障碍物；"
+            f"当前仅放置 {len(obstacles)} 个，请减少数量或 obstacle_clearance。"
+        )
+
     return OrchardEnvironment(
         obstacles=obstacles,
         corridors=[],
@@ -378,7 +398,10 @@ def make_density_environment(
         start_pos=start_pos,
         goal_pos=goal_pos,
         bounds=bounds,
-        description=f"密度实验地图（{obstacle_count}个圆形障碍，地图种子{seed}）",
+        description=(
+            f"密度实验地图（{obstacle_count}个互不重叠圆形障碍，"
+            f"边缘间隔≥{clearance:.1f}m，地图种子{seed}）"
+        ),
     )
 
 
@@ -566,6 +589,15 @@ def load_environment(npz_path):
         ]
         description = str(data["description"].item())
 
+        # 检查是否有新格式的多对起点终点（format_version >= 2）
+        start_goal_pairs = None
+        if "start_goal_pairs" in data.files:
+            pairs_array = data["start_goal_pairs"]
+            start_goal_pairs = [
+                ((float(start_x), float(start_y)), (float(goal_x), float(goal_y)))
+                for start_x, start_y, goal_x, goal_y in pairs_array
+            ]
+
     environment = OrchardEnvironment(
         obstacles=obstacles,
         corridors=corridors,
@@ -580,8 +612,12 @@ def load_environment(npz_path):
         goal_pos=goal_pos,
         bounds=bounds,
         description=description,
+        start_goal_pairs=start_goal_pairs,  # 新增：多对起点终点
     )
-    print(f"[环境] 已读取NPZ: {npz_path}")
+    if start_goal_pairs:
+        print(f"[环境] 已读取NPZ: {npz_path} (包含{len(start_goal_pairs)}对起点终点)")
+    else:
+        print(f"[环境] 已读取NPZ: {npz_path}")
     return environment
 
 

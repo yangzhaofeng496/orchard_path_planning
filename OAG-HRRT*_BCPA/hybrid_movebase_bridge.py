@@ -275,6 +275,10 @@ class HybridMapPlanner:
         vehicle_geometry=None,
         wheel_base=2.5,
         max_steer_deg=30.0,
+        use_ackermann_constraints=True,
+        goal_probability=0.20,
+        tangent_probability=0.10,
+        adaptive_sampling_probabilities=False,
         smoothing_iterations=2,
     ):
         self.environment = MapEnvironment()
@@ -288,6 +292,10 @@ class HybridMapPlanner:
         self.path_optimization_config = path_optimization_config or {}
         self.wheel_base = float(wheel_base)
         self.max_steer_deg = float(max_steer_deg)
+        self.use_ackermann_constraints = bool(use_ackermann_constraints)
+        self.goal_probability = float(goal_probability)
+        self.tangent_probability = float(tangent_probability)
+        self.adaptive_sampling_probabilities = bool(adaptive_sampling_probabilities)
         self.smoothing_iterations = int(smoothing_iterations)
 
         geometry = vehicle_geometry or {}
@@ -356,6 +364,7 @@ class HybridMapPlanner:
                 vehicle=self.vehicle,
                 obstacles=env.obstacles,
                 curvature=curvature,
+                use_ackermann_constraints=self.use_ackermann_constraints,
                 expand_length=3.0,
                 step_size=0.08,
                 max_iterations=self.max_iterations,
@@ -364,7 +373,9 @@ class HybridMapPlanner:
                 corridors=sampling_corridors,
                 goal_rectangle=goal_rectangle,
                 rectangle_anchor_mode="closest_to_goal",
-                goal_probability=0.20,
+                goal_probability=self.goal_probability,
+                tangent_probability=self.tangent_probability,
+                adaptive_sampling_probabilities=self.adaptive_sampling_probabilities,
                 corridor_probability=0.0,  # 与 oag_hrrt_dwa_demo.py 一致，不使用走廊
                 rectangle_probability=0.45,
                 allow_reverse=self.allow_reverse,
@@ -375,7 +386,6 @@ class HybridMapPlanner:
                 shrink_activation_distance=18.0,
                 near_anchor_probability=0.55,
                 near_anchor_length_ratio=0.40,
-                adaptive_sampling_probabilities=True,
                 cluster_shape="ellipse",
                 use_goal_connector=self.use_goal_connector,
                 relax_goal_yaw=False,
@@ -505,6 +515,14 @@ class HybridMoveBaseBridge:
             vehicle_geometry=geometry_config,
             wheel_base=vehicle_config.get('wheel_base', 2.5),
             max_steer_deg=vehicle_config.get('max_steer_deg', 30.0),
+            use_ackermann_constraints=planner_config.get(
+                'use_ackermann_constraints', True
+            ),
+            goal_probability=planner_config.get('goal_probability', 0.20),
+            tangent_probability=planner_config.get('tangent_probability', 0.10),
+            adaptive_sampling_probabilities=planner_config.get(
+                'adaptive_sampling_probabilities', False
+            ),
             smoothing_iterations=planner_config.get('smoothing_iterations', 2),
         )
         print(f"[Config] 已加载共享参数: {args.config}")

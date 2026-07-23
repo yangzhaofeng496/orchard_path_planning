@@ -4,7 +4,9 @@ import math
 import numpy as np
 import yaml
 import matplotlib
-matplotlib.use('TkAgg')  # 使用 TkAgg 后端，兼容性好
+# 交互运行默认使用 Tk；测试、服务器渲染可通过 MPLBACKEND=Agg 覆盖。
+if not os.environ.get("MPLBACKEND"):
+    matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 from matplotlib.patches import Circle, Ellipse, Polygon
 from matplotlib.collections import LineCollection
@@ -460,6 +462,8 @@ def run_once(
     max_iterations=3000,
     enable_path_optimization=False,
     optimization_config=None,
+    callback_factory=None,
+    callback_interval=10,
 ):
     """
     不带可视化的单次规划（用于快速测试或多次试验）
@@ -515,7 +519,11 @@ def run_once(
         random_seed=seed,
     )
 
-    result = planner.planning()
+    callback = callback_factory(planner) if callback_factory is not None else None
+    result = planner.planning(
+        callback=callback,
+        callback_interval=max(1, int(callback_interval)),
+    )
     if result is None:
         return {"success": 0}, None, None, None, None
 

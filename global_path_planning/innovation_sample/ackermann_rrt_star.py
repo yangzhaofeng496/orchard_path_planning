@@ -18,7 +18,7 @@ from vehicle.vehicle_collision import (
     get_vehicle_corners,
 )
 
-from hybrid_sampler import HybridSampler
+from global_path_planning.innovation_sample.hybrid_sampler import HybridSampler
 
 
 @dataclass
@@ -98,6 +98,7 @@ class AckermannRRTStar:
         vehicle,
         obstacles,
         curvature,
+        use_ackermann_constraints=True,
         expand_length=3.0,
         step_size=0.02,
         goal_connect_distance=7.0,
@@ -109,12 +110,13 @@ class AckermannRRTStar:
         goal_rectangle=None,
         rectangle_anchor_mode="latest",
         goal_probability=0.10,
+        tangent_probability=0.05,
         corridor_probability=0.15,
         rectangle_probability=0.30,
         allow_reverse=False,
         use_tangent_guidance=True,
         tangent_clearance=0.5,
-        tangent_extension=4.0,
+        tangent_extension=0.3,
         shrink_probability=0.60,
         shrink_length_factor=0.70,
         shrink_width_factor=0.65,
@@ -126,6 +128,18 @@ class AckermannRRTStar:
         use_goal_connector=False,
         relax_goal_yaw=False,
         random_seed=0,
+        tangent_distance_threshold=12.0,
+        single_cluster_tangent_scale=0.30,
+        multi_cluster_tangent_scale=1.00,
+        tangent_target_tolerance=1.0,
+        tangent_along_std=0.30,
+        tangent_lateral_std=0.20,
+        max_guidance_updates=20,
+        tangent_detour_weight=20.0,
+        max_tangent_detour_ratio=1.15,
+        remaining_blocker_weight=2.0,
+        side_switch_penalty=3.0,
+        post_solution_iterations=300,
     ):
 
         self.start = start
@@ -137,6 +151,7 @@ class AckermannRRTStar:
         self.vehicle = vehicle
         self.obstacles = obstacles
         self.curvature = curvature
+        self.use_ackermann_constraints = bool(use_ackermann_constraints)
 
         self.expand_length = expand_length
         self.step_size = step_size
@@ -150,6 +165,8 @@ class AckermannRRTStar:
         self.allow_reverse = allow_reverse
         self.use_goal_connector = use_goal_connector
         self.relax_goal_yaw = relax_goal_yaw
+        self.post_solution_iterations = max(0, int(post_solution_iterations))
+
         vehicle_radius = math.hypot(
             max(vehicle.front_length, vehicle.rear_length)
             + vehicle.safety_margin,
@@ -176,6 +193,7 @@ class AckermannRRTStar:
             goal_rectangle=goal_rectangle,
             use_hybrid_sampling=use_hybrid_sampling,
             goal_probability=goal_probability,
+            tangent_probability=tangent_probability,
             corridor_probability=corridor_probability,
             rectangle_probability=rectangle_probability,
             obstacles=obstacles,
@@ -191,6 +209,17 @@ class AckermannRRTStar:
             adaptive_probabilities=adaptive_sampling_probabilities,
             cluster_shape=cluster_shape,
             random_seed=random_seed,
+            tangent_distance_threshold=tangent_distance_threshold,
+            single_cluster_tangent_scale=single_cluster_tangent_scale,
+            multi_cluster_tangent_scale=multi_cluster_tangent_scale,
+            tangent_target_tolerance=tangent_target_tolerance,
+            tangent_along_std=tangent_along_std,
+            tangent_lateral_std=tangent_lateral_std,
+            max_guidance_updates=max_guidance_updates,
+            tangent_detour_weight=tangent_detour_weight,
+            max_tangent_detour_ratio=max_tangent_detour_ratio,
+            remaining_blocker_weight=remaining_blocker_weight,
+            side_switch_penalty=side_switch_penalty,
         )
 
     def rectangle_anchor_node(self):
@@ -232,6 +261,21 @@ class AckermannRRTStar:
         distance = math.hypot(to_pose.x - from_pose.x, to_pose.y - from_pose.y)
         if distance < 1e-4:
             return None
+
+        if not self.use_ackermann_constraints:
+            # Classic geometric RRT*: connect states with a collision-checked
+            # straight segment and do not impose a turning-radius constraint.
+            heading = math.atan2(to_pose.y - from_pose.y, to_pose.x - from_pose.x)
+            sample_count = max(2, int(math.ceil(distance / self.step_size)) + 1)
+            path = EdgePath(
+                [from_pose.x + (to_pose.x - from_pose.x) * i / (sample_count - 1)
+                 for i in range(sample_count)],
+                [from_pose.y + (to_pose.y - from_pose.y) * i / (sample_count - 1)
+                 for i in range(sample_count)],
+                [heading] * sample_count,
+                [1] * sample_count,
+            )
+            return truncate_path(path, max_length) if max_length else path
 
         if self.allow_reverse:
             path = plan_reeds_shepp_path(
@@ -374,10 +418,16 @@ class AckermannRRTStar:
         规划路径
         callback: 可选的回调函数，每 callback_interval 次迭代调用一次
         callback_interval: 回调间隔（迭代次数）
-        找到路径后继续优化迭代 100 次
+        找到第一条路径后继续优化 post_solution_iterations 次
         """
         self.start_time = time.time()
-        goal_found_iteration = None
+
+        # 每次规划开始前重置采样器状态
+        if hasattr(self.sampler, 'set_feasible_path_found'):
+            self.sampler.set_feasible_path_found(False)
+
+        first_solution_iteration = None
+
         for iteration in range(self.max_iterations):
             if self.sampler.goal_rectangle is not None:
                 anchor_node = self.rectangle_anchor_node()
@@ -406,19 +456,26 @@ class AckermannRRTStar:
             if cost < self.best_cost:
                 self.best_cost = cost
                 self.cost_history.append((iteration, cost))
-            
+
             # 每 callback_interval 次迭代调用一次回调函数
             if callback is not None and iteration % callback_interval == 0:
                 callback(iteration)
-            
+
+            # 检查是否到达目标
             if self.check_goal(new_index):
-                if self.first_solution_iteration is None:
+                # 第一次找到解时记录并通知采样器
+                if first_solution_iteration is None:
+                    first_solution_iteration = iteration
                     self.first_solution_iteration = iteration + 1
-                    goal_found_iteration = iteration
-            
-            # 找到路径后继续优化 100 次
-            if goal_found_iteration is not None and iteration - goal_found_iteration >= 100:
-                break
+
+                    # 通知采样器首次解已找到，立即关闭切向引导
+                    if hasattr(self.sampler, 'set_feasible_path_found'):
+                        self.sampler.set_feasible_path_found(True)
+
+            # 首次解后继续优化固定次数
+            if first_solution_iteration is not None:
+                if iteration - first_solution_iteration >= self.post_solution_iterations:
+                    break
 
         self.planning_time = time.time() - self.start_time
         if self.goal_index is None:

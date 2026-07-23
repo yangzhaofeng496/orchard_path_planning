@@ -1,0 +1,299 @@
+{
+  "map": "/Users/yangzhaofeng/VsCodeProject/orchard_path_planning/experiment/map/density_high/map_0000_seed_385493199789511627.npz",
+  "config": "/Users/yangzhaofeng/VsCodeProject/orchard_path_planning/oag_hrrt_dwa/config.yaml",
+  "timestamp": "2026-07-22T15:11:53.168959",
+  "master_seed": 6725466720110298125,
+  "n": 10,
+  "total_pairs": 100,
+  "total_planner_runs": 300,
+  "start_rectangle": [
+    0.3796526054590572,
+    14.315136476426797,
+    0.1488833746898255,
+    8.411910669975187
+  ],
+  "goal_rectangle": [
+    20.12158808933003,
+    44.64267990074441,
+    19.980148883374696,
+    29.71712158808934
+  ],
+  "start_points": [
+    [
+      14.053092919757557,
+      6.592797899411041
+    ],
+    [
+      7.070291499405662,
+      7.31408807042184
+    ],
+    [
+      9.402165688583784,
+      6.377218545085918
+    ],
+    [
+      5.366740177023946,
+      7.249673067872619
+    ],
+    [
+      3.8256253661444872,
+      5.042033536493094
+    ],
+    [
+      10.368218832512524,
+      5.915820664614624
+    ],
+    [
+      8.703397380541631,
+      5.408954354105454
+    ],
+    [
+      13.037047390830859,
+      0.7170165075078451
+    ],
+    [
+      12.117126903543477,
+      4.859174097821935
+    ],
+    [
+      1.0786637526173568,
+      3.968371660477819
+    ]
+  ],
+  "goal_points": [
+    [
+      43.536932303325806,
+      23.965337940458376
+    ],
+    [
+      36.52479356325202,
+      27.66510336305589
+    ],
+    [
+      27.049089991906214,
+      21.197743441899785
+    ],
+    [
+      28.33769613415263,
+      26.826067642436417
+    ],
+    [
+      25.79721209379483,
+      23.129285095962924
+    ],
+    [
+      29.58524851460567,
+      26.433070902339733
+    ],
+    [
+      42.829982474122566,
+      27.093631695563825
+    ],
+    [
+      22.66510658510346,
+      24.357464868132716
+    ],
+    [
+      32.29498145791376,
+      21.164021366355975
+    ],
+    [
+      35.63540730704127,
+      21.795651329658106
+    ]
+  ],
+  "obstacle_clearance": 0.2,
+  "boundary_clearance": 0.5,
+  "min_point_spacing": 1.0,
+  "min_pair_distance": 5.0,
+  "planner_configs": [
+    {
+      "name": "Baseline",
+      "color": "royalblue",
+      "goal_probability": 0.0,
+      "tangent_probability": 0.0,
+      "use_tangent_guidance": false,
+      "adaptive_sampling_probabilities": false,
+      "description": "Baseline RRT*"
+    },
+    {
+      "name": "GoalBias",
+      "color": "darkorange",
+      "goal_probability": 0.2,
+      "tangent_probability": 0.0,
+      "use_tangent_guidance": false,
+      "adaptive_sampling_probabilities": false,
+      "description": "RRT* + Goal Bias (20%)"
+    },
+    {
+      "name": "GoalBias+Tangent",
+      "color": "darkred",
+      "goal_probability": 0.2,
+      "tangent_probability": 0.1,
+      "use_tangent_guidance": true,
+      "adaptive_sampling_probabilities": false,
+      "description": "RRT* + Goal Bias (20%) + Tangent (10%)"
+    }
+  ],
+  "summaries": [
+    {
+      "config_name": "Baseline",
+      "description": "Baseline RRT*",
+      "goal_probability": 0.0,
+      "tangent_probability": 0.0,
+      "adaptive_sampling_probabilities": false,
+      "total_pairs": 100,
+      "success_count": 100,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "planning_time_all": {
+        "mean": 1.1320926703861915,
+        "std": 0.443231553728684,
+        "median": 1.0011669375235215,
+        "min": 0.5347892499994487,
+        "max": 2.9093554579885677
+      },
+      "planning_time_success": {
+        "mean": 1.1320926703861915,
+        "std": 0.443231553728684,
+        "median": 1.0011669375235215,
+        "min": 0.5347892499994487,
+        "max": 2.9093554579885677
+      },
+      "path_length": {
+        "mean": 45.96676446552487,
+        "std": 10.877509064358405,
+        "median": 43.423854441646256,
+        "min": 24.80061561381522,
+        "max": 74.58113400944302
+      },
+      "num_nodes_all": {
+        "mean": 255.15,
+        "std": 59.147506287247644,
+        "median": 241.5,
+        "min": 153.0,
+        "max": 467.0
+      },
+      "num_nodes_success": {
+        "mean": 255.15,
+        "std": 59.147506287247644,
+        "median": 241.5,
+        "min": 153.0,
+        "max": 467.0
+      },
+      "first_solution_iter": {
+        "mean": 182.1,
+        "std": 109.98249860773304,
+        "median": 168.0,
+        "min": 13.0,
+        "max": 563.0
+      }
+    },
+    {
+      "config_name": "GoalBias",
+      "description": "RRT* + Goal Bias (20%)",
+      "goal_probability": 0.2,
+      "tangent_probability": 0.0,
+      "adaptive_sampling_probabilities": false,
+      "total_pairs": 100,
+      "success_count": 100,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "planning_time_all": {
+        "mean": 1.5257513682567514,
+        "std": 1.945909089923905,
+        "median": 0.7495369995012879,
+        "min": 0.16408970800694078,
+        "max": 10.095069166040048
+      },
+      "planning_time_success": {
+        "mean": 1.5257513682567514,
+        "std": 1.945909089923905,
+        "median": 0.7495369995012879,
+        "min": 0.16408970800694078,
+        "max": 10.095069166040048
+      },
+      "path_length": {
+        "mean": 44.484992980341815,
+        "std": 10.330383077727866,
+        "median": 43.845685149653065,
+        "min": 24.05723962745019,
+        "max": 70.99319940156624
+      },
+      "num_nodes_all": {
+        "mean": 193.19,
+        "std": 84.6531387486607,
+        "median": 189.5,
+        "min": 56.0,
+        "max": 336.0
+      },
+      "num_nodes_success": {
+        "mean": 193.19,
+        "std": 84.6531387486607,
+        "median": 189.5,
+        "min": 56.0,
+        "max": 336.0
+      },
+      "first_solution_iter": {
+        "mean": 190.83,
+        "std": 164.97660773576357,
+        "median": 144.0,
+        "min": 15.0,
+        "max": 894.0
+      }
+    },
+    {
+      "config_name": "GoalBias+Tangent",
+      "description": "RRT* + Goal Bias (20%) + Tangent (10%)",
+      "goal_probability": 0.2,
+      "tangent_probability": 0.1,
+      "adaptive_sampling_probabilities": false,
+      "total_pairs": 100,
+      "success_count": 100,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "planning_time_all": {
+        "mean": 0.4762107133108657,
+        "std": 0.2826253276613079,
+        "median": 0.3962619375088252,
+        "min": 0.2175702500389889,
+        "max": 2.00688133307267
+      },
+      "planning_time_success": {
+        "mean": 0.4762107133108657,
+        "std": 0.2826253276613079,
+        "median": 0.3962619375088252,
+        "min": 0.2175702500389889,
+        "max": 2.00688133307267
+      },
+      "path_length": {
+        "mean": 50.70463149248119,
+        "std": 10.606587105994523,
+        "median": 49.87407669591937,
+        "min": 26.45372123539732,
+        "max": 74.9550483536548
+      },
+      "num_nodes_all": {
+        "mean": 124.81,
+        "std": 45.37459531499978,
+        "median": 112.0,
+        "min": 77.0,
+        "max": 293.0
+      },
+      "num_nodes_success": {
+        "mean": 124.81,
+        "std": 45.37459531499978,
+        "median": 112.0,
+        "min": 77.0,
+        "max": 293.0
+      },
+      "first_solution_iter": {
+        "mean": 206.11,
+        "std": 183.39432352174916,
+        "median": 160.0,
+        "min": 21.0,
+        "max": 984.0
+      }
+    }
+  ]
+}

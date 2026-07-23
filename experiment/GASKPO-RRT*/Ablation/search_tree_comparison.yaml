@@ -1,0 +1,91 @@
+# 搜索树对比实验参数
+experiment:
+  density: 30
+  map_seed: 0
+  search_seed: 0
+  max_iterations: 1500
+
+map:
+  # 任意两个圆形障碍物边缘之间的最小距离（m）
+  obstacle_clearance: 0.5
+  # 目标矩形尺寸（m），会同时用于算法计算和图中红色虚线框显示
+  rectangle_length: 25.0
+  rectangle_width: 15.0
+
+# 三种算法共同使用的车辆运动学配置
+planner:
+  use_ackermann_constraints: false
+  allow_reverse: false
+  use_goal_connector: true
+  goal_connect_distance: 10.0
+  relax_goal_yaw: true
+
+sampling:
+  hybrid:
+    # 概率使用 0.0–1.0；0.20 表示 20%，不是 20。
+    goal_probability: 0.2
+    tangent_probability: 0.50
+    rectangle_probability: 0.00
+    corridor_probability: 0.0
+    adaptive_sampling_probabilities: false
+    use_tangent_guidance: true
+    # 节点进入终点连接距离后，尝试通过碰撞检测的路径精确连接终点。
+    use_goal_connector: true
+    goal_connect_distance: 10.0
+    # 是否允许忽略指定终点朝向，尝试若干更容易连接的接近角度。
+    relax_goal_yaw: true
+    # 延长同一切向目标的保持时间，减少 T1、T2…频繁重建。
+    max_guidance_updates: 35
+    tangent_target_tolerance: 1.5
+    side_switch_penalty: 6.0
+
+display:
+  # 实时显示搜索过程；关闭后只生成最终结果
+  live_enabled: true
+  # 每隔多少次有效迭代刷新一次画面
+  live_callback_interval: 20
+  # 每帧暂停时间（秒）；调大可放慢动画
+  live_pause: 0.005
+  # 规划结束后是否保持窗口
+  keep_window_open: true
+
+  figure_width: 18
+  figure_height: 6
+  dpi: 300
+
+  # 仅改变显示大小，不改变规划器中的真实碰撞几何
+  obstacle_scale: 0.8
+  tangent_ellipse_scale: 0.8
+
+  obstacle_color: "#2F4F4F"
+  obstacle_alpha: 0.60
+  rectangle_color: "#FF4D4F"
+  rectangle_alpha: 0.70
+  rectangle_linewidth: 1.8
+
+  tree_linewidth: 1.0
+  tree_dash_on: 4
+  tree_dash_off: 3
+  path_linewidth: 2.5
+
+  tangent_arrow_linewidth: 1.8
+  tangent_target_size: 42
+  tangent_sample_size: 24
+  tangent_history_min_shift: 1.5
+
+methods:
+  RRT*:
+    label: "RRT*"
+    color: "#6F767E"
+    tree_alpha: 0.35
+    path_color: "#6F767E"
+  GoalBias:
+    label: "RRT*+GoalBias"
+    color: "#2878B5"
+    tree_alpha: 0.40
+    path_color: "#2878B5"
+  Hybrid:
+    label: "GASKPO-RRT*"
+    color: "#E07A5F"
+    tree_alpha: 0.45
+    path_color: "#E07A5F"

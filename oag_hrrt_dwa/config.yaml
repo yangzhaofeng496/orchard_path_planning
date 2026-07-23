@@ -54,17 +54,32 @@ poses:
 # RRT* 规划器配置
 # ----------------------------------------------------------------------------
 planner:
+  # true: 使用 Dubins/Reeds-Shepp 阿克曼曲率约束连接
+  # false: 使用经典 RRT* 直线连接，不限制最小转弯半径
+  use_ackermann_constraints: false
+
+  # 目标偏置采样概率，独立于阿克曼约束开关
+  # 0.0 表示关闭；0.20 表示约 20% 的采样直接偏向目标
+  goal_probability: 0.20
+
+  # 障碍物阻挡目标方向时，采样其切向绕障目标的概率
+  # 0.0 表示关闭切向目标采样
+  tangent_probability: 0.10
+
+  # false: 严格使用上述固定概率；true: 随迭代阶段自动调整采样概率
+  adaptive_sampling_probabilities: false
+
   # 最大迭代次数
   max_iterations: 2500
 
   # 动态采样矩形尺寸（米）
   rectangle:
-    length: 10.0
-    width: 5.0
+    length: 22.0
+    width: 16.0
 
   # 平滑迭代次数
   # 简化模式：投影通道连接后不再执行 Chaikin 平滑
-  smoothing_iterations: 10
+  smoothing_iterations: 0
 
   # 是否使用目标连接器（goal connector）
   # true: 在接近目标时尝试直接连接，加快收敛
@@ -100,7 +115,7 @@ vehicle:
 # 两圆通道提前对齐（投影方法）
 # ----------------------------------------------------------------------------
 corridor_alignment:
-  enabled: true
+  enabled: false
 
   # 候选必须能容纳车身、净宽不超过车宽的指定倍数，并且路径真实
   # 穿过两圆门线；不再限制门线交点到通道中心的距离。
@@ -161,7 +176,7 @@ dwa:
   lookahead_distance: 3.2
 
   # 目标容忍距离（米）
-  goal_tolerance: 0.45
+  goal_tolerance: 0.1
 
   # 速度限制
   max_speed: 2.0         # 最大速度（m/s）- 提高到 2.0 加快仿真
